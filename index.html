@@ -13,822 +13,712 @@
   html,body{margin:0;background:#0B0E14;-webkit-text-size-adjust:100%;overscroll-behavior:none;}
   #root{min-height:100vh;}
   *{-webkit-tap-highlight-color:transparent;}
-  textarea,input{font-size:16px;} /* stop iOS zoom on focus */
+  textarea,input{font-size:16px;}
 </style>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script>
+  function showErr(msg){
+    var r=document.getElementById('root');
+    if(r) r.innerHTML='<div style="padding:18px;font:13px ui-monospace,monospace;color:#E5565B;white-space:pre-wrap;align-self:flex-start;width:100%"><b>Drawline couldn\'t start</b>\n\n'+String(msg).replace(/</g,'&lt;')+'</div>';
+  }
+  window.addEventListener('error',function(e){ showErr(((e.error&&(e.error.name+': '+e.error.message))||e.message||'Error')+(e.filename?'\n'+e.filename+':'+e.lineno:'')); });
+  window.addEventListener('unhandledrejection',function(e){ showErr('Promise: '+((e.reason&&(e.reason.stack||e.reason.message))||e.reason)); });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
 <div id="root" style="color:#8B97A8;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:system-ui">Loading Drawline…</div>
-<script type="text/babel" data-presets="react">
-
+<script>
+try{
+  if(!window.React||!window.ReactDOM){ showErr('React did not load \u2014 check your internet and reload.'); }
+  else {
+// @ts-nocheck
 const { useState, useEffect, useMemo, useCallback, useRef } = React;
-
-// localStorage-backed storage shim (replaces Claude's window.storage)
 if (!window.storage) {
-  window.storage = {
-    get: async (k) => { const v = localStorage.getItem(k); if (v === null) throw new Error("nf"); return { key: k, value: v, shared: false }; },
-    set: async (k, val) => { localStorage.setItem(k, val); return { key: k, value: val, shared: false }; },
-    delete: async (k) => { localStorage.removeItem(k); return { key: k, deleted: true }; },
-    list: async (p = "") => ({ keys: Object.keys(localStorage).filter((x) => x.startsWith(p)) }),
-  };
+    window.storage = {
+        get: async (k) => { const v = localStorage.getItem(k); if (v === null)
+            throw new Error("nf"); return { key: k, value: v, shared: false }; },
+        set: async (k, val) => { localStorage.setItem(k, val); return { key: k, value: val, shared: false }; },
+        delete: async (k) => { localStorage.removeItem(k); return { key: k, deleted: true }; },
+        list: async (p = "") => ({ keys: Object.keys(localStorage).filter((x) => x.startsWith(p)) }),
+    };
 }
-
-// inline lucide-style icons
-const mkIcon = (children) => ({ size = 24, ...p }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>{children}</svg>
-);
-const Home = mkIcon(<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>);
-const TrendingUp = mkIcon(<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>);
-const Sliders = mkIcon(<><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></>);
-const ChevronLeft = mkIcon(<polyline points="15 18 9 12 15 6"/>);
-const Plus = mkIcon(<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>);
-const X = mkIcon(<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>);
-const Lock = mkIcon(<><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>);
-
-import { Home, Calculator, TrendingUp, Sliders, ChevronLeft, Plus, X, Lock } from "lucide-react";
-
+const mkIcon = (children) => ({ size = 24, ...p }) => (React.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", ...p }, children));
+const Home = mkIcon(React.createElement(React.Fragment, null,
+    React.createElement("path", { d: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" }),
+    React.createElement("polyline", { points: "9 22 9 12 15 12 15 22" })));
+const TrendingUp = mkIcon(React.createElement(React.Fragment, null,
+    React.createElement("polyline", { points: "22 7 13.5 15.5 8.5 10.5 2 17" }),
+    React.createElement("polyline", { points: "16 7 22 7 22 13" })));
+const Sliders = mkIcon(React.createElement(React.Fragment, null,
+    React.createElement("line", { x1: "4", y1: "21", x2: "4", y2: "14" }),
+    React.createElement("line", { x1: "4", y1: "10", x2: "4", y2: "3" }),
+    React.createElement("line", { x1: "12", y1: "21", x2: "12", y2: "12" }),
+    React.createElement("line", { x1: "12", y1: "8", x2: "12", y2: "3" }),
+    React.createElement("line", { x1: "20", y1: "21", x2: "20", y2: "16" }),
+    React.createElement("line", { x1: "20", y1: "12", x2: "20", y2: "3" }),
+    React.createElement("line", { x1: "1", y1: "14", x2: "7", y2: "14" }),
+    React.createElement("line", { x1: "9", y1: "8", x2: "15", y2: "8" }),
+    React.createElement("line", { x1: "17", y1: "16", x2: "23", y2: "16" })));
+const ChevronLeft = mkIcon(React.createElement("polyline", { points: "15 18 9 12 15 6" }));
+const Plus = mkIcon(React.createElement(React.Fragment, null,
+    React.createElement("line", { x1: "12", y1: "5", x2: "12", y2: "19" }),
+    React.createElement("line", { x1: "5", y1: "12", x2: "19", y2: "12" })));
+const X = mkIcon(React.createElement(React.Fragment, null,
+    React.createElement("line", { x1: "18", y1: "6", x2: "6", y2: "18" }),
+    React.createElement("line", { x1: "6", y1: "6", x2: "18", y2: "18" })));
+const Lock = mkIcon(React.createElement(React.Fragment, null,
+    React.createElement("rect", { x: "3", y: "11", width: "18", height: "11", rx: "2", ry: "2" }),
+    React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" })));
 // ---------- theme (inline styles; Tailwind only for layout) ----------
 const C = {
-  bg: "#0B0E14", panel: "#151B25", panel2: "#1B2330", line: "#27313F",
-  text: "#E8EDF4", mut: "#8B97A8", dim: "#5B6577",
-  teal: "#54C8C0", green: "#3FB68B", amber: "#E0A33E", red: "#E5565B", gold: "#D4A24E",
+    bg: "#0B0E14", panel: "#151B25", panel2: "#1B2330", line: "#27313F",
+    text: "#E8EDF4", mut: "#8B97A8", dim: "#5B6577",
+    teal: "#54C8C0", green: "#3FB68B", amber: "#E0A33E", red: "#E5565B", gold: "#D4A24E",
 };
 const STATUS_COLOR = { GO: C.green, CAUTION: C.amber, FAILED: C.red, PASSED: C.green };
 const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-
 const RULE_DEFAULTS = {
-  Eval:   { start: 50000, dd: 2000, locks: 0, trigger: 0,     floor: 0,     target: 3000, consist: 0.40, minDays: 3, maxContracts: 40 },
-  Funded: { start: 50000, dd: 2000, locks: 1, trigger: 52100, floor: 50100, target: 0,    consist: 0,    minDays: 0, maxContracts: 40 },
-  Elite:  { start: 0,     dd: 2000, locks: 1, trigger: 2100,  floor: 100,   target: 0,    consist: 0,    minDays: 0, maxContracts: 40 },
+    Eval: { start: 50000, dd: 2000, locks: 0, trigger: 0, floor: 0, target: 3000, consist: 0.40, minDays: 3, maxContracts: 40 },
+    Funded: { start: 50000, dd: 2000, locks: 1, trigger: 52100, floor: 50100, target: 0, consist: 0, minDays: 0, maxContracts: 40 },
+    Elite: { start: 0, dd: 2000, locks: 1, trigger: 2100, floor: 100, target: 0, consist: 0, minDays: 0, maxContracts: 40 },
 };
 const PT_VALUE = { MES: 5, MNQ: 2, MGC: 10, MCL: 100 };
 const KEY = "drawline_state_v1";
-
 const newAccount = (name, mode) => ({
-  name, mode, ledger: [], payouts: [], econ: { evalCost: 159, resetCount: 0, resetFee: 95 },
-  trade: { inst: "MNQ", stop: 20, risk: 100, dayStop: 500, goal: 300, buildDays: 2, eliteTarget: 5000, eliteDays: 5, lossLimit: 2, maxTrades: 4 },
-  session: { date: "", trades: [] },
+    name, mode, ledger: [], payouts: [], econ: { evalCost: 159, resetCount: 0, resetFee: 95 },
+    trade: { inst: "MNQ", stop: 20, risk: 100, dayStop: 500, goal: 300, buildDays: 2, eliteTarget: 5000, eliteDays: 5, lossLimit: 2, maxTrades: 4 },
+    session: { date: "", trades: [] },
 });
 const DEFAULT_STATE = {
-  rules: JSON.parse(JSON.stringify(RULE_DEFAULTS)),
-  accounts: [
-    newAccount("Select 50K #1", "Eval"),
-    newAccount("Select 50K #2", "Eval"),
-    newAccount("Select 50K #3", "Eval"),
-    newAccount("Select 50K #4", "Funded"),
-    newAccount("Select 50K #5", "Elite"),
-  ],
+    rules: JSON.parse(JSON.stringify(RULE_DEFAULTS)),
+    accounts: [
+        newAccount("Select 50K #1", "Eval"),
+        newAccount("Select 50K #2", "Eval"),
+        newAccount("Select 50K #3", "Eval"),
+        newAccount("Select 50K #4", "Funded"),
+        newAccount("Select 50K #5", "Elite"),
+    ],
 };
-
 const TDEF = { inst: "MNQ", stop: 20, risk: 100, dayStop: 500, goal: 300, buildDays: 2, eliteTarget: 5000, eliteDays: 5, lossLimit: 2, maxTrades: 4 };
 const migrate = (loaded) => {
-  if (!loaded || !Array.isArray(loaded.accounts)) return JSON.parse(JSON.stringify(DEFAULT_STATE));
-  loaded.accounts = loaded.accounts.map((a) => ({
-    ledger: [], payouts: [], econ: { evalCost: 159, resetCount: 0, resetFee: 95 }, trade: TDEF, session: { date: "", trades: [] },
-    ...a,
-    session: a.session || { date: "", trades: [] },
-    trade: { ...TDEF, ...(a.trade || {}) },
-  }));
-  if (!loaded.rules) loaded.rules = JSON.parse(JSON.stringify(RULE_DEFAULTS));
-  return loaded;
+    if (!loaded || !Array.isArray(loaded.accounts))
+        return JSON.parse(JSON.stringify(DEFAULT_STATE));
+    loaded.accounts = loaded.accounts.map((a) => ({
+        ledger: [], payouts: [], econ: { evalCost: 159, resetCount: 0, resetFee: 95 }, trade: TDEF, session: { date: "", trades: [] },
+        ...a,
+        session: a.session || { date: "", trades: [] },
+        trade: { ...TDEF, ...(a.trade || {}) },
+    }));
+    if (!loaded.rules)
+        loaded.rules = JSON.parse(JSON.stringify(RULE_DEFAULTS));
+    return loaded;
 };
-
 // ---------- helpers ----------
 const fmt$ = (n) => (n < 0 ? "-$" : "$") + Math.abs(Math.round(n || 0)).toLocaleString();
 const pct = (n) => ((n || 0) * 100).toFixed(1) + "%";
 const today = () => new Date().toISOString().slice(0, 10);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-
 function compute(acc, rules) {
-  const r = rules[acc.mode];
-  const payoutTaken = acc.payouts.length > 0;
-  let eod = r.start, hwm = r.start, breach = false, biggest = 0, winDays = 0;
-  const rows = acc.ledger.map((e) => {
-    eod += e.net;
-    hwm = Math.max(hwm, eod);
-    let line;
-    if (r.locks) line = (hwm >= r.trigger || payoutTaken) ? r.floor : hwm - r.dd;
-    else line = hwm - r.dd;
-    if (eod <= line) breach = true;
-    if (e.net > biggest) biggest = e.net;
-    if (e.net > 0) winDays++;
-    return { ...e, eod, hwm, line, room: eod - line };
-  });
-  const cur = rows.length ? rows[rows.length - 1] : { eod: r.start, hwm: r.start, line: r.locks ? (payoutTaken ? r.floor : r.start - r.dd) : r.start - r.dd, room: r.dd };
-  const totalPnL = cur.eod - r.start;
-  const days = acc.ledger.length;
-  const locked = r.locks && (cur.hwm >= r.trigger || payoutTaken);
-
-  const bigPct = totalPnL > 0 ? biggest / totalPnL : 0;
-  const minTotal = r.consist > 0 ? biggest / r.consist : 0;
-  const moreNeeded = Math.max(0, minTotal - totalPnL);
-  const maxDayTarget = r.consist * r.target;
-  const suggCap = 0.3 * r.target;
-  const consistOK = r.consist === 0 || bigPct <= r.consist;
-  const targetMet = r.target === 0 || totalPnL >= r.target;
-  const pass = acc.mode === "Eval" && targetMet && consistOK && days >= r.minDays && !breach;
-
-  let result;
-  if (acc.mode !== "Eval") result = acc.mode;
-  else if (breach) result = "FAILED";
-  else if (pass) result = "PASSED";
-  else if (totalPnL >= r.target) result = "Fix consistency / days";
-  else result = "In progress";
-
-  const ddStatus = breach ? "FAILED" : cur.room <= r.dd * 0.25 ? "CAUTION" : "GO";
-
-  const invested = acc.econ.evalCost + acc.econ.resetCount * acc.econ.resetFee;
-  const paySum = acc.payouts.reduce((s, p) => s + (p.amount || 0), 0);
-  const net = paySum - invested;
-  const roi = invested > 0 ? net / invested : 0;
-
-  const targetTotal = Math.max(r.target, minTotal);
-  const remainingToPass = Math.max(0, targetTotal - totalPnL);
-  const daysLeft = Math.max(1, r.minDays - days);
-  const dailyAim = r.target > 0 ? Math.min(remainingToPass / daysLeft, maxDayTarget || remainingToPass) : 0;
-
-  return {
-    r, rows, cur, totalPnL, days, winDays, biggest, breach, locked,
-    bigPct, minTotal, moreNeeded, maxDayTarget, suggCap, consistOK, targetMet, pass, result,
-    ddStatus, profitToPass: Math.max(0, Math.max(r.target, minTotal) - totalPnL),
-    remainingToPass, daysLeft, dailyAim,
-    invested, payCount: acc.payouts.length, paySum, net, roi,
-  };
+    const r = rules[acc.mode];
+    const payoutTaken = acc.payouts.length > 0;
+    let eod = r.start, hwm = r.start, breach = false, biggest = 0, winDays = 0;
+    const rows = acc.ledger.map((e) => {
+        eod += e.net;
+        hwm = Math.max(hwm, eod);
+        let line;
+        if (r.locks)
+            line = (hwm >= r.trigger || payoutTaken) ? r.floor : hwm - r.dd;
+        else
+            line = hwm - r.dd;
+        if (eod <= line)
+            breach = true;
+        if (e.net > biggest)
+            biggest = e.net;
+        if (e.net > 0)
+            winDays++;
+        return { ...e, eod, hwm, line, room: eod - line };
+    });
+    const cur = rows.length ? rows[rows.length - 1] : { eod: r.start, hwm: r.start, line: r.locks ? (payoutTaken ? r.floor : r.start - r.dd) : r.start - r.dd, room: r.dd };
+    const totalPnL = cur.eod - r.start;
+    const days = acc.ledger.length;
+    const locked = r.locks && (cur.hwm >= r.trigger || payoutTaken);
+    const bigPct = totalPnL > 0 ? biggest / totalPnL : 0;
+    const minTotal = r.consist > 0 ? biggest / r.consist : 0;
+    const moreNeeded = Math.max(0, minTotal - totalPnL);
+    const maxDayTarget = r.consist * r.target;
+    const suggCap = 0.3 * r.target;
+    const consistOK = r.consist === 0 || bigPct <= r.consist;
+    const targetMet = r.target === 0 || totalPnL >= r.target;
+    const pass = acc.mode === "Eval" && targetMet && consistOK && days >= r.minDays && !breach;
+    let result;
+    if (acc.mode !== "Eval")
+        result = acc.mode;
+    else if (breach)
+        result = "FAILED";
+    else if (pass)
+        result = "PASSED";
+    else if (totalPnL >= r.target)
+        result = "Fix consistency / days";
+    else
+        result = "In progress";
+    const ddStatus = breach ? "FAILED" : cur.room <= r.dd * 0.25 ? "CAUTION" : "GO";
+    const invested = acc.econ.evalCost + acc.econ.resetCount * acc.econ.resetFee;
+    const paySum = acc.payouts.reduce((s, p) => s + (p.amount || 0), 0);
+    const net = paySum - invested;
+    const roi = invested > 0 ? net / invested : 0;
+    const targetTotal = Math.max(r.target, minTotal);
+    const remainingToPass = Math.max(0, targetTotal - totalPnL);
+    const daysLeft = Math.max(1, r.minDays - days);
+    const dailyAim = r.target > 0 ? Math.min(remainingToPass / daysLeft, maxDayTarget || remainingToPass) : 0;
+    return {
+        r, rows, cur, totalPnL, days, winDays, biggest, breach, locked,
+        bigPct, minTotal, moreNeeded, maxDayTarget, suggCap, consistOK, targetMet, pass, result,
+        ddStatus, profitToPass: Math.max(0, Math.max(r.target, minTotal) - totalPnL),
+        remainingToPass, daysLeft, dailyAim,
+        invested, payCount: acc.payouts.length, paySum, net, roi,
+    };
 }
-
 // ---------- small UI atoms ----------
-const Pill = ({ label, color }) => (
-  <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
-    style={{ color, backgroundColor: color + "22", letterSpacing: ".02em" }}>{label}</span>
-);
-
+const Pill = ({ label, color }) => (React.createElement("span", { className: "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold", style: { color, backgroundColor: color + "22", letterSpacing: ".02em" } }, label));
 function Gauge({ room, dd, color, line, locked }) {
-  const ratio = clamp(room / dd, 0, 1);
-  return (
-    <div>
-      <div className="flex items-end justify-between mb-1">
-        <span className="text-xs" style={{ color: C.dim }}>ROOM TO LIQ</span>
-        <span className="text-sm font-bold" style={{ color, fontFamily: MONO }}>{fmt$(room)}</span>
-      </div>
-      <div className="h-2 w-full rounded-full overflow-hidden" style={{ backgroundColor: "#0A0D12" }}>
-        <div className="h-full rounded-full" style={{ width: `${ratio * 100}%`, backgroundColor: color, transition: "width .35s" }} />
-      </div>
-      <div className="flex justify-between mt-1">
-        <span className="text-xs flex items-center gap-1" style={{ color: C.dim, fontFamily: MONO }}>
-          {locked && <Lock size={10} />} liq {fmt$(line)}
-        </span>
-        <span className="text-xs" style={{ color: C.dim, fontFamily: MONO }}>{Math.round(ratio * 100)}%</span>
-      </div>
-    </div>
-  );
+    const ratio = clamp(room / dd, 0, 1);
+    return (React.createElement("div", null,
+        React.createElement("div", { className: "flex items-end justify-between mb-1" },
+            React.createElement("span", { className: "text-xs", style: { color: C.dim } }, "ROOM TO LIQ"),
+            React.createElement("span", { className: "text-sm font-bold", style: { color, fontFamily: MONO } }, fmt$(room))),
+        React.createElement("div", { className: "h-2 w-full rounded-full overflow-hidden", style: { backgroundColor: "#0A0D12" } },
+            React.createElement("div", { className: "h-full rounded-full", style: { width: `${ratio * 100}%`, backgroundColor: color, transition: "width .35s" } })),
+        React.createElement("div", { className: "flex justify-between mt-1" },
+            React.createElement("span", { className: "text-xs flex items-center gap-1", style: { color: C.dim, fontFamily: MONO } },
+                locked && React.createElement(Lock, { size: 10 }),
+                " liq ",
+                fmt$(line)),
+            React.createElement("span", { className: "text-xs", style: { color: C.dim, fontFamily: MONO } },
+                Math.round(ratio * 100),
+                "%"))));
 }
-
-const Field = ({ label, value, onChange, prefix, type = "number", placeholder }) => (
-  <label className="flex flex-col gap-1 flex-1 min-w-0">
-    <span className="text-xs" style={{ color: C.mut }}>{label}</span>
-    <div className="flex items-center rounded-lg px-3 h-11" style={{ backgroundColor: C.bg, border: `1px solid ${C.line}` }}>
-      {prefix && <span className="text-sm mr-1" style={{ color: C.dim }}>{prefix}</span>}
-      <input type={type} inputMode={type === "number" ? "decimal" : undefined} value={value} placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-transparent outline-none text-sm" style={{ color: C.text, fontFamily: MONO }} />
-    </div>
-  </label>
-);
-
-const Stat = ({ label, value, color }) => (
-  <div className="flex flex-col">
-    <span className="text-xs" style={{ color: C.dim }}>{label}</span>
-    <span className="text-base font-bold" style={{ color: color || C.text, fontFamily: MONO }}>{value}</span>
-  </div>
-);
-
+const Field = ({ label, value, onChange, prefix, type = "number", placeholder }) => (React.createElement("label", { className: "flex flex-col gap-1 flex-1 min-w-0" },
+    React.createElement("span", { className: "text-xs", style: { color: C.mut } }, label),
+    React.createElement("div", { className: "flex items-center rounded-lg px-3 h-11", style: { backgroundColor: C.bg, border: `1px solid ${C.line}` } },
+        prefix && React.createElement("span", { className: "text-sm mr-1", style: { color: C.dim } }, prefix),
+        React.createElement("input", { type: type, inputMode: type === "number" ? "decimal" : undefined, value: value, placeholder: placeholder, onChange: (e) => onChange(e.target.value), className: "w-full bg-transparent outline-none text-sm", style: { color: C.text, fontFamily: MONO } }))));
+const Stat = ({ label, value, color }) => (React.createElement("div", { className: "flex flex-col" },
+    React.createElement("span", { className: "text-xs", style: { color: C.dim } }, label),
+    React.createElement("span", { className: "text-base font-bold", style: { color: color || C.text, fontFamily: MONO } }, value)));
 // ---------- screens ----------
 function AccountCard({ acc, m, onTap }) {
-  const sc = STATUS_COLOR[acc.mode === "Eval" ? (m.result === "PASSED" ? "PASSED" : m.ddStatus) : m.ddStatus] || C.mut;
-  return (
-    <button onClick={onTap} className="w-full text-left rounded-2xl p-4 mb-3"
-      style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-semibold truncate" style={{ color: C.text }}>{acc.name}</span>
-          <Pill label={acc.mode} color={C.teal} />
-        </div>
-        <Pill label={acc.mode === "Eval" ? m.result.toUpperCase() : m.ddStatus} color={sc} />
-      </div>
-      <Gauge room={m.cur.room} dd={m.r.dd} color={sc} line={m.cur.line} locked={m.locked} />
-      <div className="grid grid-cols-3 gap-2 mt-4">
-        <Stat label="Balance" value={fmt$(m.cur.eod)} />
-        <Stat label="P&L" value={fmt$(m.totalPnL)} color={m.totalPnL >= 0 ? C.green : C.red} />
-        {acc.mode === "Eval"
-          ? <Stat label="Consist" value={pct(m.bigPct)} color={m.consistOK ? C.green : C.red} />
-          : <Stat label="ROI" value={pct(m.roi)} color={m.roi >= 0 ? C.green : C.red} />}
-      </div>
-    </button>
-  );
+    const sc = STATUS_COLOR[acc.mode === "Eval" ? (m.result === "PASSED" ? "PASSED" : m.ddStatus) : m.ddStatus] || C.mut;
+    return (React.createElement("button", { onClick: onTap, className: "w-full text-left rounded-2xl p-4 mb-3", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+        React.createElement("div", { className: "flex items-center justify-between mb-3" },
+            React.createElement("div", { className: "flex items-center gap-2 min-w-0" },
+                React.createElement("span", { className: "font-semibold truncate", style: { color: C.text } }, acc.name),
+                React.createElement(Pill, { label: acc.mode, color: C.teal })),
+            React.createElement(Pill, { label: acc.mode === "Eval" ? m.result.toUpperCase() : m.ddStatus, color: sc })),
+        React.createElement(Gauge, { room: m.cur.room, dd: m.r.dd, color: sc, line: m.cur.line, locked: m.locked }),
+        React.createElement("div", { className: "grid grid-cols-3 gap-2 mt-4" },
+            React.createElement(Stat, { label: "Balance", value: fmt$(m.cur.eod) }),
+            React.createElement(Stat, { label: "P&L", value: fmt$(m.totalPnL), color: m.totalPnL >= 0 ? C.green : C.red }),
+            acc.mode === "Eval"
+                ? React.createElement(Stat, { label: "Consist", value: pct(m.bigPct), color: m.consistOK ? C.green : C.red })
+                : React.createElement(Stat, { label: "ROI", value: pct(m.roi), color: m.roi >= 0 ? C.green : C.red }))));
 }
-
 function Dashboard({ accounts, rules, open }) {
-  return (
-    <div className="p-4">
-      {accounts.map((acc, i) => (
-        <AccountCard key={i} acc={acc} m={compute(acc, rules)} onTap={() => open(i)} />
-      ))}
-      <p className="text-xs text-center mt-2 mb-24" style={{ color: C.dim }}>
-        Tap an account to log days, payouts & rules
-      </p>
-    </div>
-  );
+    return (React.createElement("div", { className: "p-4" },
+        accounts.map((acc, i) => (React.createElement(AccountCard, { key: i, acc: acc, m: compute(acc, rules), onTap: () => open(i) }))),
+        React.createElement("p", { className: "text-xs text-center mt-2 mb-24", style: { color: C.dim } }, "Tap an account to log days, payouts & rules")));
 }
-
 function Seg({ options, value, onChange }) {
-  return (
-    <div className="flex rounded-xl p-1 gap-1" style={{ backgroundColor: C.bg, border: `1px solid ${C.line}` }}>
-      {options.map((o) => (
-        <button key={o} onClick={() => onChange(o)}
-          className="flex-1 h-9 rounded-lg text-sm font-semibold"
-          style={value === o ? { backgroundColor: C.teal + "22", color: C.teal } : { color: C.mut }}>{o}</button>
-      ))}
-    </div>
-  );
+    return (React.createElement("div", { className: "flex rounded-xl p-1 gap-1", style: { backgroundColor: C.bg, border: `1px solid ${C.line}` } }, options.map((o) => (React.createElement("button", { key: o, onClick: () => onChange(o), className: "flex-1 h-9 rounded-lg text-sm font-semibold", style: value === o ? { backgroundColor: C.teal + "22", color: C.teal } : { color: C.mut } }, o)))));
 }
-
 function AccountDetail({ idx, state, setState, back }) {
-  const acc = state.accounts[idx];
-  const m = useMemo(() => compute(acc, state.rules), [acc, state.rules]);
-  const sc = STATUS_COLOR[acc.mode === "Eval" ? (m.result === "PASSED" ? "PASSED" : m.ddStatus) : m.ddStatus] || C.mut;
-  const [net, setNet] = useState("");
-  const [d, setD] = useState(today());
-  const [po, setPo] = useState(""); const [pod, setPod] = useState(today());
-  const [whatif, setWhatif] = useState("");
-  const [amt, setAmt] = useState("");
-
-  const mut = (fn) => setState((s) => {
-    const a = JSON.parse(JSON.stringify(s.accounts));
-    fn(a[idx]); return { ...s, accounts: a };
-  });
-  const addDay = () => { if (net === "") return; mut((x) => x.ledger.push({ id: Date.now(), date: d, net: parseFloat(net) })); setNet(""); };
-  const delDay = (id) => mut((x) => { x.ledger = x.ledger.filter((e) => e.id !== id); });
-  const addPay = () => { if (po === "") return; mut((x) => x.payouts.push({ id: Date.now(), date: pod, amount: parseFloat(po) })); setPo(""); };
-  const delPay = (id) => mut((x) => { x.payouts = x.payouts.filter((e) => e.id !== id); });
-  const [confirmAct, setConfirmAct] = useState(false);
-  const activateFunded = () => { mut((x) => { x.mode = "Funded"; x.ledger = []; x.session = { date: "", trades: [] }; }); setConfirmAct(false); };
-  const [confirmElite, setConfirmElite] = useState(false);
-  const moveToElite = () => { mut((x) => { x.mode = "Elite"; x.ledger = []; x.session = { date: "", trades: [] }; }); setConfirmElite(false); };
-
-  const tr = acc.trade || { inst: "MNQ", stop: 20, risk: 100, dayStop: 500, goal: 300, buildDays: 2, eliteTarget: 5000, eliteDays: 5, lossLimit: 2, maxTrades: 4 };
-  const setTr = (k, v) => mut((x) => { x.trade = { ...tr, ...(x.trade || {}), [k]: v }; });
-
-  const wf = parseFloat(whatif) || 0;
-  const wfTotal = m.r.consist > 0 ? wf / m.r.consist : 0;
-  const wfSafe = m.r.target > 0 && wf <= m.r.consist * m.r.target;
-
-  // ---- daily target / circuit breaker engine ----
-  const td = today();
-  const trades = (acc.session && acc.session.date === td) ? acc.session.trades : [];
-  const logTrade = (sign) => { const v = parseFloat(amt); if (isNaN(v)) return; mut((x) => { const cur = (x.session && x.session.date === td) ? x.session.trades : []; x.session = { date: td, trades: [...cur, { id: Date.now() + Math.random(), amt: sign * Math.abs(v) }] }; }); setAmt(""); };
-  const delTrade = (id) => mut((x) => { if (x.session && x.session.date === td) x.session = { date: td, trades: x.session.trades.filter((t) => t.id !== id) }; });
-  const closeDay = () => { if (trades.length === 0) return; const sum = trades.reduce((s, t) => s + t.amt, 0); mut((x) => { x.ledger.push({ id: Date.now(), date: td, net: sum }); x.session = { date: td, trades: [] }; }); };
-
-  const lossLimit = parseInt(tr.lossLimit) || 0;
-  const maxTrades = parseInt(tr.maxTrades) || 0;
-  const tradesCount = trades.length;
-  const wins = trades.filter((t) => t.amt > 0).length;
-  const losses = trades.filter((t) => t.amt < 0).length;
-  const tP = tradesCount > 0 ? trades.reduce((s, t) => s + t.amt, 0) : null;
-  let lossStreak = 0;
-  for (let i = trades.length - 1; i >= 0; i--) { if (trades[i].amt < 0) lossStreak++; else break; }
-
-  const pv = PT_VALUE[tr.inst] || 2;
-  const stopN = parseFloat(tr.stop) || 0;
-  const riskPer = stopN * pv;
-  const riskBudget = parseFloat(tr.risk) || 0;
-  const dayStop = parseFloat(tr.dayStop) || 0;
-  let aim, funded = null, elite = null;
-  if (acc.mode === "Eval") aim = m.dailyAim;
-  else if (acc.mode === "Funded") {
-    const buffer = 2100;                       // 50K Select Daily: profit to reach $52,100 and unlock payouts
-    const payCap = 1000;                        // 50K daily payout cap
-    const buildDays = Math.max(1, parseInt(tr.buildDays) || 2);
-    const unlockLeft = Math.max(0, buffer - m.totalPnL);
-    const unlocked = m.totalPnL >= buffer;
-    aim = unlocked ? payCap / 2 : unlockLeft / Math.max(1, buildDays - m.days);  // pace buffer, then $500 maxes the $1,000 payout
-    const todayGain = Math.max(0, tP || 0);
-    const payoutAvail = unlocked && todayGain * 2 >= 250 ? Math.min(todayGain * 2, payCap) : 0;
-    funded = { buffer, payCap, unlockLeft, unlocked, payoutAvail, buildDays };
-  } else {
-    const eliteTarget = Math.max(250, parseFloat(tr.eliteTarget) || 5000);
-    const eliteDays = Math.max(1, parseInt(tr.eliteDays) || 5);
-    const remaining = Math.max(0, eliteTarget - m.totalPnL);
-    aim = remaining > 0 ? remaining / Math.max(1, eliteDays - m.days) : eliteTarget / eliteDays;
-    const safeWithdraw = Math.max(0, m.cur.eod - (m.r.floor + m.r.dd));   // keep $2,000 cushion above the locked floor
-    const ready = m.totalPnL >= eliteTarget && safeWithdraw >= 250;
-    elite = { eliteTarget, eliteDays, remaining, ready, safeWithdraw, takeHome: safeWithdraw * 0.8 };
-  }
-  const liveRoom = m.cur.room + (tP || 0);
-  const cap = m.r.maxContracts;
-  const survival = riskPer > 0 ? Math.floor(Math.max(0, liveRoom) / riskPer) : 0;
-  const sane = riskPer > 0 ? Math.floor(riskBudget / riskPer) : 0;
-  const size = Math.max(0, Math.min(sane, cap, survival));
-
-  let V;
-  if (m.breach) V = { l: "STOP", c: C.red, r: "Account breached — it's done" };
-  else if (acc.mode === "Eval" && m.pass) V = { l: "PASSED", c: C.green, r: "You passed — activate it, stop trading this one" };
-  else if (liveRoom <= 0) V = { l: "STOP", c: C.red, r: "At your drawdown limit — stop now" };
-  else if (lossLimit > 0 && lossStreak >= lossLimit) V = { l: "STOP", c: C.red, r: `${lossLimit} losses in a row — done for the day` };
-  else if (maxTrades > 0 && tradesCount >= maxTrades) V = { l: "STOP", c: C.amber, r: `${maxTrades} trades — that's enough today` };
-  else if (tP !== null && dayStop > 0 && tP <= -dayStop) V = { l: "STOP", c: C.red, r: `Down ${fmt$(-dayStop)} — daily loss hit, stop` };
-  else if (acc.mode === "Eval" && m.r.target > 0 && tP !== null && tP >= m.maxDayTarget) V = { l: "STOP", c: C.amber, r: "At the 40% day cap — bank it, no more today" };
-  else if (aim > 0 && tP !== null && tP >= aim) V = { l: "DONE", c: C.green, r: acc.mode === "Funded" ? "Hit $500 — max daily payout, bank it" : acc.mode === "Elite" ? "Hit your build target — bank it toward the payout" : "Made your number — no more trading needed today" };
-  else if (liveRoom <= m.r.dd * 0.25) V = { l: "CAUTION", c: C.amber, r: "Thin room — minimum size only" };
-  else if (funded && funded.unlocked && funded.payoutAvail > 0) V = { l: "PAYOUT", c: C.gold, r: `Withdraw up to ${fmt$(funded.payoutAvail)} today` };
-  else if (elite && elite.ready) V = { l: "PAYOUT", c: C.gold, r: `Payout ready — pull up to ${fmt$(elite.safeWithdraw)} (${fmt$(elite.takeHome)} to you)` };
-  else {
-    let reason;
-    if (funded && !funded.unlocked) { const dl = Math.max(1, funded.buildDays - m.days); reason = `build ${fmt$(funded.unlockLeft)} · ${fmt$(aim)}/day over ${dl} day${dl > 1 ? "s" : ""}`; }
-    else if (funded && funded.unlocked) reason = tP !== null ? `${fmt$(Math.max(0, aim - tP))} to max your $1,000 payout` : `aim ${fmt$(aim)} — maxes your $1,000 payout`;
-    else if (elite) reason = tP !== null ? `${fmt$(Math.max(0, aim - tP))} to go · building to ${fmt$(elite.eliteTarget)}` : `${fmt$(aim)}/day toward a ${fmt$(elite.eliteTarget)} payout`;
-    else if (aim > 0 && tP !== null) reason = `${fmt$(Math.max(0, aim - tP))} to go today`;
-    else if (aim > 0) reason = `aim for ${fmt$(aim)} today`;
-    else if (acc.mode === "Eval" && !m.pass) reason = `profit hit — clock ${Math.max(0, m.r.minDays - m.days)} more day(s)`;
-    else reason = "keep going";
-    V = { l: "KEEP GOING", c: C.green, r: reason };
-  }
-  const showSize = V.l === "KEEP GOING" || V.l === "CAUTION";
-
-  return (
-    <div className="pb-28">
-      <div className="sticky top-0 z-10 flex items-center gap-2 px-3 h-14" style={{ backgroundColor: C.bg, borderBottom: `1px solid ${C.line}` }}>
-        <button onClick={back} style={{ color: C.teal }}><ChevronLeft size={26} /></button>
-        <input value={acc.name} onChange={(e) => mut((x) => (x.name = e.target.value))}
-          className="flex-1 bg-transparent outline-none font-semibold text-lg" style={{ color: C.text }} />
-      </div>
-
-      <div className="p-4 space-y-4">
-        <Seg options={["Eval", "Funded", "Elite"]} value={acc.mode} onChange={(v) => mut((x) => (x.mode = v))} />
-
-        {/* status panel */}
-        <div className="rounded-2xl p-4" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs" style={{ color: C.dim }}>{m.locked ? "DRAWDOWN — LOCKED" : "DRAWDOWN"}</span>
-            <Pill label={acc.mode === "Eval" ? m.result.toUpperCase() : m.ddStatus} color={sc} />
-          </div>
-          <Gauge room={m.cur.room} dd={m.r.dd} color={sc} line={m.cur.line} locked={m.locked} />
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <Stat label="Balance" value={fmt$(m.cur.eod)} />
-            <Stat label="High-water" value={fmt$(m.cur.hwm)} />
-            <Stat label="Total P&L" value={fmt$(m.totalPnL)} color={m.totalPnL >= 0 ? C.green : C.red} />
-          </div>
-        </div>
-
-        {/* TODAY — daily target + circuit breaker + size */}
-        <div className="rounded-2xl p-4" style={{ backgroundColor: V.c + "14", border: `1px solid ${V.c}` }}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold" style={{ color: C.text }}>Today</span>
-            <Pill label={V.l} color={V.c} />
-          </div>
-          <p className="text-lg font-bold" style={{ color: V.c }}>{V.r}</p>
-          <div className="grid grid-cols-3 gap-3 mt-3">
-            <Stat label={acc.mode === "Eval" ? "Aim today" : "Daily aim"} value={fmt$(aim)} color={C.teal} />
-            <Stat label="Suggested size" value={showSize ? `${size}` : "—"} color={showSize ? C.green : C.dim} />
-            <Stat label="Today P&L" value={tP === null ? "—" : fmt$(tP)} color={tP === null ? C.dim : tP >= 0 ? C.green : C.red} />
-          </div>
-          {funded && (
-            <p className="text-xs mt-2" style={{ color: C.mut, fontFamily: MONO }}>
-              {funded.unlocked
-                ? <>payouts <span style={{ color: C.green }}>unlocked</span> · up to <span style={{ color: C.gold }}>$1,000</span>/day · today <span style={{ color: C.gold }}>{fmt$(funded.payoutAvail)}</span></>
-                : <>buffer <span style={{ color: C.text }}>{fmt$(m.totalPnL)}</span>/$2,100 · build <span style={{ color: C.amber }}>{fmt$(funded.unlockLeft)}</span> to unlock</>}
-            </p>
-          )}
-          {elite && (
-            <p className="text-xs mt-2" style={{ color: C.mut, fontFamily: MONO }}>
-              building <span style={{ color: C.text }}>{fmt$(m.totalPnL)}</span>/{fmt$(elite.eliteTarget)} · pull-safe <span style={{ color: C.gold }}>{fmt$(elite.safeWithdraw)}</span> · keep 80%
-            </p>
-          )}
-
-          {/* trade logger */}
-          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${C.line}` }}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs" style={{ color: C.mut }}>Log trades</span>
-              <span className="text-xs" style={{ color: C.dim, fontFamily: MONO }}>
-                {tradesCount}/{maxTrades || "∞"} · <span style={{ color: C.green }}>{wins}W</span> <span style={{ color: C.red }}>{losses}L</span>
-                {lossStreak > 0 && <span style={{ color: C.red }}> · {lossStreak} streak</span>}
-              </span>
-            </div>
-            <div className="flex gap-2 mt-2 items-end">
-              <Field label="Trade $" prefix="$" value={amt} onChange={setAmt} placeholder="result" />
-              <button onClick={() => logTrade(1)} className="h-11 px-4 rounded-lg text-sm font-bold shrink-0" style={{ backgroundColor: C.green, color: C.bg }}>Win</button>
-              <button onClick={() => logTrade(-1)} className="h-11 px-4 rounded-lg text-sm font-bold shrink-0" style={{ backgroundColor: C.red, color: C.bg }}>Loss</button>
-            </div>
-            {tradesCount > 0 && (
-              <>
-                <div className="flex flex-wrap items-center gap-1.5 mt-3">
-                  {trades.map((t) => (
-                    <span key={t.id} className="rounded-md pl-2 pr-1 py-0.5 text-xs font-semibold inline-flex items-center gap-1"
-                      style={{ fontFamily: MONO, color: t.amt >= 0 ? C.green : C.red, backgroundColor: (t.amt >= 0 ? C.green : C.red) + "22" }}>
-                      {t.amt >= 0 ? "W" : "L"} {fmt$(t.amt)}
-                      <button onClick={() => delTrade(t.id)} style={{ color: C.dim }}><X size={12} /></button>
-                    </span>
-                  ))}
-                </div>
-                <button onClick={closeDay} className="w-full h-10 rounded-lg mt-3 text-sm font-bold" style={{ backgroundColor: C.teal, color: C.bg }}>
-                  Close out day → log {fmt$(tP || 0)}
-                </button>
-                <p className="text-xs mt-1.5 text-center" style={{ color: C.dim }}>commits the day to your ledger &amp; moves the gauge</p>
-              </>
-            )}
-          </div>
-
-          {/* sizing + limits */}
-          <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${C.line}` }}>
-            <span className="text-xs" style={{ color: C.mut }}>Setup &amp; limits</span>
-            <div className="mt-2"><Seg options={["MES", "MNQ", "MGC", "MCL"]} value={tr.inst} onChange={(v) => setTr("inst", v)} /></div>
-            <div className="flex gap-2 mt-2">
-              <Field label="Stop (pts)" value={tr.stop} onChange={(v) => setTr("stop", v)} />
-              <Field label="Risk / trade" prefix="$" value={tr.risk} onChange={(v) => setTr("risk", v)} />
-              {acc.mode === "Funded" && <Field label="Build days" prefix="#" value={tr.buildDays} onChange={(v) => setTr("buildDays", v)} />}
-            </div>
-            {acc.mode === "Elite" && (
-              <div className="flex gap-2 mt-2">
-                <Field label="Payout target" prefix="$" value={tr.eliteTarget} onChange={(v) => setTr("eliteTarget", v)} />
-                <Field label="Build days" prefix="#" value={tr.eliteDays} onChange={(v) => setTr("eliteDays", v)} />
-              </div>
-            )}
-            <div className="flex gap-2 mt-2">
-              <Field label="Stop after losses" prefix="#" value={tr.lossLimit} onChange={(v) => setTr("lossLimit", v)} />
-              <Field label="Max trades" prefix="#" value={tr.maxTrades} onChange={(v) => setTr("maxTrades", v)} />
-              <Field label="Stop if down" prefix="$" value={tr.dayStop} onChange={(v) => setTr("dayStop", v)} />
-            </div>
-            {showSize && (
-              <p className="text-xs mt-2" style={{ color: C.dim }}>
-                {size} {tr.inst} · risks {fmt$(size * riskPer)} ({m.cur.room > 0 ? pct((size * riskPer) / m.cur.room) : "—"} of room) per trade
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* eval result + pass */}
-        {acc.mode === "Eval" && (
-          <div className="rounded-2xl p-4" style={{ backgroundColor: m.result === "PASSED" ? C.green + "1A" : C.panel, border: `1px solid ${m.result === "PASSED" ? C.green : C.line}` }}>
-            <div className="flex items-center justify-between">
-              <span className="font-bold" style={{ color: m.result === "PASSED" ? C.green : C.text }}>
-                {m.result === "PASSED" ? "PASSED ✓" : m.result}
-              </span>
-              <span className="text-sm" style={{ color: C.mut, fontFamily: MONO }}>{m.days}/{m.r.minDays} days</span>
-            </div>
-            {m.result !== "PASSED" && (
-              <p className="text-sm mt-1" style={{ color: C.mut, fontFamily: MONO }}>
-                {fmt$(m.profitToPass)} more profit to pass
-              </p>
-            )}
-            {m.result === "PASSED" && (
-              !confirmAct ? (
-                <>
-                  <button onClick={() => setConfirmAct(true)} className="w-full h-11 rounded-lg mt-3 text-sm font-bold" style={{ backgroundColor: C.green, color: C.bg }}>
-                    Activate funded account →
-                  </button>
-                  <p className="text-xs mt-1.5 text-center" style={{ color: C.dim }}>eval profit doesn't carry — funded starts fresh at $50,000</p>
-                </>
-              ) : (
-                <div className="mt-3">
-                  <p className="text-sm" style={{ color: C.text }}>Start a fresh funded account at $50,000? This clears the eval days (your cost &amp; ROI stay).</p>
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={activateFunded} className="flex-1 h-11 rounded-lg text-sm font-bold" style={{ backgroundColor: C.green, color: C.bg }}>Yes, start funded</button>
-                    <button onClick={() => setConfirmAct(false)} className="flex-1 h-11 rounded-lg text-sm font-semibold" style={{ color: C.mut, border: `1px solid ${C.line}` }}>Cancel</button>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        )}
-
-        {/* consistency */}
-        {acc.mode === "Eval" && (
-          <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold" style={{ color: C.text }}>Consistency · 40% rule</span>
-              <span className="text-sm font-bold" style={{ color: m.consistOK ? C.green : C.red, fontFamily: MONO }}>
-                {pct(m.bigPct)} of total
-              </span>
-            </div>
-            <div className="h-2 w-full rounded-full overflow-hidden" style={{ backgroundColor: "#0A0D12" }}>
-              <div className="h-full" style={{ width: `${clamp(m.bigPct / 0.4, 0, 1) * 100}%`, backgroundColor: m.consistOK ? C.green : C.red }} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Stat label="Biggest day" value={fmt$(m.biggest)} />
-              <Stat label="More profit needed" value={fmt$(m.moreNeeded)} color={m.moreNeeded > 0 ? C.amber : C.green} />
-              <Stat label="Max day @ target" value={fmt$(m.maxDayTarget)} />
-              <Stat label="Suggested daily cap" value={fmt$(m.suggCap)} color={C.teal} />
-            </div>
-            <div className="pt-1">
-              <Field label="What-if: plan a win day of" prefix="$" value={whatif} onChange={setWhatif} placeholder="1000" />
-              {wf > 0 && (
-                <p className="text-sm mt-2" style={{ color: C.mut, fontFamily: MONO }}>
-                  needs {fmt$(wfTotal)} total ·{" "}
-                  <span style={{ color: wfSafe ? C.green : C.red }}>{wfSafe ? "safe at target" : "too big for target"}</span>
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* log a day */}
-        <div className="rounded-2xl p-4" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-          <span className="text-sm font-semibold" style={{ color: C.text }}>Log a day</span>
-          <div className="flex gap-2 mt-3 items-end">
-            <Field label="Date" type="date" value={d} onChange={setD} />
-            <Field label="Net P&L" prefix="$" value={net} onChange={setNet} placeholder="0" />
-            <button onClick={addDay} className="h-11 w-11 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: C.teal, color: C.bg }}><Plus size={22} /></button>
-          </div>
-          <div className="mt-3 divide-y" style={{ borderColor: C.line }}>
-            {[...m.rows].reverse().map((row) => (
-              <div key={row.id} className="flex items-center justify-between py-2">
-                <span className="text-sm" style={{ color: C.mut, fontFamily: MONO }}>{row.date}</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold" style={{ color: row.net >= 0 ? C.green : C.red, fontFamily: MONO }}>{fmt$(row.net)}</span>
-                  <span className="text-sm" style={{ color: C.dim, fontFamily: MONO }}>{fmt$(row.eod)}</span>
-                  <button onClick={() => delDay(row.id)} style={{ color: C.dim }}><X size={16} /></button>
-                </div>
-              </div>
-            ))}
-            {m.rows.length === 0 && <p className="text-sm py-3" style={{ color: C.dim }}>No days yet — add tonight's result.</p>}
-          </div>
-        </div>
-
-        {/* payouts — funded/elite only */}
-        {acc.mode !== "Eval" && (
-          <div className="rounded-2xl p-4" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold" style={{ color: C.text }}>Payouts</span>
-              <span className="text-sm" style={{ color: C.mut, fontFamily: MONO }}>{m.payCount} · {fmt$(m.paySum)}</span>
-            </div>
-            {acc.mode === "Funded" && m.payCount > 0 && (
-              <p className="text-xs mt-1 flex items-center gap-1" style={{ color: C.gold }}><Lock size={11} /> floor locked at {fmt$(m.r.floor)} (first payout taken)</p>
-            )}
-            <div className="flex gap-2 mt-3 items-end">
-              <Field label="Date" type="date" value={pod} onChange={setPod} />
-              <Field label="Amount" prefix="$" value={po} onChange={setPo} placeholder="0" />
-              <button onClick={addPay} className="h-11 w-11 rounded-lg flex items-center justify-center shrink-0"
-                style={{ backgroundColor: C.gold, color: C.bg }}><Plus size={22} /></button>
-            </div>
-            <div className="mt-2 divide-y" style={{ borderColor: C.line }}>
-              {[...acc.payouts].reverse().map((p) => (
-                <div key={p.id} className="flex items-center justify-between py-2">
-                  <span className="text-sm" style={{ color: C.mut, fontFamily: MONO }}>{p.date}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold" style={{ color: C.gold, fontFamily: MONO }}>{fmt$(p.amount)}</span>
-                    <button onClick={() => delPay(p.id)} style={{ color: C.dim }}><X size={16} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* move to elite — funded only */}
-        {acc.mode === "Funded" && (
-          <div className="rounded-2xl p-4" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-            {!confirmElite ? (
-              <>
-                <button onClick={() => setConfirmElite(true)} className="w-full h-11 rounded-lg text-sm font-bold" style={{ backgroundColor: C.gold, color: C.bg }}>
-                  Move to Elite Live →
-                </button>
-                <p className="text-xs mt-1.5 text-center" style={{ color: C.dim }}>when Tradeify selects you · needs ≥1 payout · Elite starts fresh at $0</p>
-              </>
-            ) : (
-              <div>
-                <p className="text-sm" style={{ color: C.text }}>Move this account to Elite Live? It resets to a $0 baseline with $2,000 drawdown. Your payouts &amp; cost stay for ROI.</p>
-                <div className="flex gap-2 mt-2">
-                  <button onClick={moveToElite} className="flex-1 h-11 rounded-lg text-sm font-bold" style={{ backgroundColor: C.gold, color: C.bg }}>Yes, go Elite</button>
-                  <button onClick={() => setConfirmElite(false)} className="flex-1 h-11 rounded-lg text-sm font-semibold" style={{ color: C.mut, border: `1px solid ${C.line}` }}>Cancel</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* economics */}
-        <div className="rounded-2xl p-4" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-          <span className="text-sm font-semibold" style={{ color: C.text }}>Cost &amp; ROI</span>
-          <div className="flex gap-2 mt-3">
-            <Field label="Eval cost" prefix="$" value={acc.econ.evalCost} onChange={(v) => mut((x) => (x.econ.evalCost = parseFloat(v) || 0))} />
-            <Field label="Resets" prefix="#" value={acc.econ.resetCount} onChange={(v) => mut((x) => (x.econ.resetCount = parseFloat(v) || 0))} />
-            <Field label="Reset fee" prefix="$" value={acc.econ.resetFee} onChange={(v) => mut((x) => (x.econ.resetFee = parseFloat(v) || 0))} />
-          </div>
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <Stat label="Invested" value={fmt$(m.invested)} />
-            <Stat label="Net" value={fmt$(m.net)} color={m.net >= 0 ? C.green : C.red} />
-            <Stat label="ROI" value={pct(m.roi)} color={m.roi >= 0 ? C.green : C.red} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    const acc = state.accounts[idx];
+    const m = useMemo(() => compute(acc, state.rules), [acc, state.rules]);
+    const sc = STATUS_COLOR[acc.mode === "Eval" ? (m.result === "PASSED" ? "PASSED" : m.ddStatus) : m.ddStatus] || C.mut;
+    const [net, setNet] = useState("");
+    const [d, setD] = useState(today());
+    const [po, setPo] = useState("");
+    const [pod, setPod] = useState(today());
+    const [whatif, setWhatif] = useState("");
+    const [amt, setAmt] = useState("");
+    const mut = (fn) => setState((s) => {
+        const a = JSON.parse(JSON.stringify(s.accounts));
+        fn(a[idx]);
+        return { ...s, accounts: a };
+    });
+    const addDay = () => { if (net === "")
+        return; mut((x) => x.ledger.push({ id: Date.now(), date: d, net: parseFloat(net) })); setNet(""); };
+    const delDay = (id) => mut((x) => { x.ledger = x.ledger.filter((e) => e.id !== id); });
+    const addPay = () => { if (po === "")
+        return; mut((x) => x.payouts.push({ id: Date.now(), date: pod, amount: parseFloat(po) })); setPo(""); };
+    const delPay = (id) => mut((x) => { x.payouts = x.payouts.filter((e) => e.id !== id); });
+    const [confirmAct, setConfirmAct] = useState(false);
+    const activateFunded = () => { mut((x) => { x.mode = "Funded"; x.ledger = []; x.session = { date: "", trades: [] }; }); setConfirmAct(false); };
+    const [confirmElite, setConfirmElite] = useState(false);
+    const moveToElite = () => { mut((x) => { x.mode = "Elite"; x.ledger = []; x.session = { date: "", trades: [] }; }); setConfirmElite(false); };
+    const tr = acc.trade || { inst: "MNQ", stop: 20, risk: 100, dayStop: 500, goal: 300, buildDays: 2, eliteTarget: 5000, eliteDays: 5, lossLimit: 2, maxTrades: 4 };
+    const setTr = (k, v) => mut((x) => { x.trade = { ...tr, ...(x.trade || {}), [k]: v }; });
+    const wf = parseFloat(whatif) || 0;
+    const wfTotal = m.r.consist > 0 ? wf / m.r.consist : 0;
+    const wfSafe = m.r.target > 0 && wf <= m.r.consist * m.r.target;
+    // ---- daily target / circuit breaker engine ----
+    const td = today();
+    const trades = (acc.session && acc.session.date === td) ? acc.session.trades : [];
+    const logTrade = (sign) => { const v = parseFloat(amt); if (isNaN(v))
+        return; mut((x) => { const cur = (x.session && x.session.date === td) ? x.session.trades : []; x.session = { date: td, trades: [...cur, { id: Date.now() + Math.random(), amt: sign * Math.abs(v) }] }; }); setAmt(""); };
+    const delTrade = (id) => mut((x) => { if (x.session && x.session.date === td)
+        x.session = { date: td, trades: x.session.trades.filter((t) => t.id !== id) }; });
+    const closeDay = () => { if (trades.length === 0)
+        return; const sum = trades.reduce((s, t) => s + t.amt, 0); mut((x) => { x.ledger.push({ id: Date.now(), date: td, net: sum }); x.session = { date: td, trades: [] }; }); };
+    const lossLimit = parseInt(tr.lossLimit) || 0;
+    const maxTrades = parseInt(tr.maxTrades) || 0;
+    const tradesCount = trades.length;
+    const wins = trades.filter((t) => t.amt > 0).length;
+    const losses = trades.filter((t) => t.amt < 0).length;
+    const tP = tradesCount > 0 ? trades.reduce((s, t) => s + t.amt, 0) : null;
+    let lossStreak = 0;
+    for (let i = trades.length - 1; i >= 0; i--) {
+        if (trades[i].amt < 0)
+            lossStreak++;
+        else
+            break;
+    }
+    const pv = PT_VALUE[tr.inst] || 2;
+    const stopN = parseFloat(tr.stop) || 0;
+    const riskPer = stopN * pv;
+    const riskBudget = parseFloat(tr.risk) || 0;
+    const dayStop = parseFloat(tr.dayStop) || 0;
+    let aim, funded = null, elite = null;
+    if (acc.mode === "Eval")
+        aim = m.dailyAim;
+    else if (acc.mode === "Funded") {
+        const buffer = 2100; // 50K Select Daily: profit to reach $52,100 and unlock payouts
+        const payCap = 1000; // 50K daily payout cap
+        const buildDays = Math.max(1, parseInt(tr.buildDays) || 2);
+        const unlockLeft = Math.max(0, buffer - m.totalPnL);
+        const unlocked = m.totalPnL >= buffer;
+        aim = unlocked ? payCap / 2 : unlockLeft / Math.max(1, buildDays - m.days); // pace buffer, then $500 maxes the $1,000 payout
+        const todayGain = Math.max(0, tP || 0);
+        const payoutAvail = unlocked && todayGain * 2 >= 250 ? Math.min(todayGain * 2, payCap) : 0;
+        funded = { buffer, payCap, unlockLeft, unlocked, payoutAvail, buildDays };
+    }
+    else {
+        const eliteTarget = Math.max(250, parseFloat(tr.eliteTarget) || 5000);
+        const eliteDays = Math.max(1, parseInt(tr.eliteDays) || 5);
+        const remaining = Math.max(0, eliteTarget - m.totalPnL);
+        aim = remaining > 0 ? remaining / Math.max(1, eliteDays - m.days) : eliteTarget / eliteDays;
+        const safeWithdraw = Math.max(0, m.cur.eod - (m.r.floor + m.r.dd)); // keep $2,000 cushion above the locked floor
+        const ready = m.totalPnL >= eliteTarget && safeWithdraw >= 250;
+        elite = { eliteTarget, eliteDays, remaining, ready, safeWithdraw, takeHome: safeWithdraw * 0.8 };
+    }
+    const liveRoom = m.cur.room + (tP || 0);
+    const cap = m.r.maxContracts;
+    const survival = riskPer > 0 ? Math.floor(Math.max(0, liveRoom) / riskPer) : 0;
+    const sane = riskPer > 0 ? Math.floor(riskBudget / riskPer) : 0;
+    const size = Math.max(0, Math.min(sane, cap, survival));
+    let V;
+    if (m.breach)
+        V = { l: "STOP", c: C.red, r: "Account breached — it's done" };
+    else if (acc.mode === "Eval" && m.pass)
+        V = { l: "PASSED", c: C.green, r: "You passed — activate it, stop trading this one" };
+    else if (liveRoom <= 0)
+        V = { l: "STOP", c: C.red, r: "At your drawdown limit — stop now" };
+    else if (lossLimit > 0 && lossStreak >= lossLimit)
+        V = { l: "STOP", c: C.red, r: `${lossLimit} losses in a row — done for the day` };
+    else if (maxTrades > 0 && tradesCount >= maxTrades)
+        V = { l: "STOP", c: C.amber, r: `${maxTrades} trades — that's enough today` };
+    else if (tP !== null && dayStop > 0 && tP <= -dayStop)
+        V = { l: "STOP", c: C.red, r: `Down ${fmt$(-dayStop)} — daily loss hit, stop` };
+    else if (acc.mode === "Eval" && m.r.target > 0 && tP !== null && tP >= m.maxDayTarget)
+        V = { l: "STOP", c: C.amber, r: "At the 40% day cap — bank it, no more today" };
+    else if (aim > 0 && tP !== null && tP >= aim)
+        V = { l: "DONE", c: C.green, r: acc.mode === "Funded" ? "Hit $500 — max daily payout, bank it" : acc.mode === "Elite" ? "Hit your build target — bank it toward the payout" : "Made your number — no more trading needed today" };
+    else if (liveRoom <= m.r.dd * 0.25)
+        V = { l: "CAUTION", c: C.amber, r: "Thin room — minimum size only" };
+    else if (funded && funded.unlocked && funded.payoutAvail > 0)
+        V = { l: "PAYOUT", c: C.gold, r: `Withdraw up to ${fmt$(funded.payoutAvail)} today` };
+    else if (elite && elite.ready)
+        V = { l: "PAYOUT", c: C.gold, r: `Payout ready — pull up to ${fmt$(elite.safeWithdraw)} (${fmt$(elite.takeHome)} to you)` };
+    else {
+        let reason;
+        if (funded && !funded.unlocked) {
+            const dl = Math.max(1, funded.buildDays - m.days);
+            reason = `build ${fmt$(funded.unlockLeft)} · ${fmt$(aim)}/day over ${dl} day${dl > 1 ? "s" : ""}`;
+        }
+        else if (funded && funded.unlocked)
+            reason = tP !== null ? `${fmt$(Math.max(0, aim - tP))} to max your $1,000 payout` : `aim ${fmt$(aim)} — maxes your $1,000 payout`;
+        else if (elite)
+            reason = tP !== null ? `${fmt$(Math.max(0, aim - tP))} to go · building to ${fmt$(elite.eliteTarget)}` : `${fmt$(aim)}/day toward a ${fmt$(elite.eliteTarget)} payout`;
+        else if (aim > 0 && tP !== null)
+            reason = `${fmt$(Math.max(0, aim - tP))} to go today`;
+        else if (aim > 0)
+            reason = `aim for ${fmt$(aim)} today`;
+        else if (acc.mode === "Eval" && !m.pass)
+            reason = `profit hit — clock ${Math.max(0, m.r.minDays - m.days)} more day(s)`;
+        else
+            reason = "keep going";
+        V = { l: "KEEP GOING", c: C.green, r: reason };
+    }
+    const showSize = V.l === "KEEP GOING" || V.l === "CAUTION";
+    return (React.createElement("div", { className: "pb-28" },
+        React.createElement("div", { className: "sticky top-0 z-10 flex items-center gap-2 px-3 h-14", style: { backgroundColor: C.bg, borderBottom: `1px solid ${C.line}` } },
+            React.createElement("button", { onClick: back, style: { color: C.teal } },
+                React.createElement(ChevronLeft, { size: 26 })),
+            React.createElement("input", { value: acc.name, onChange: (e) => mut((x) => (x.name = e.target.value)), className: "flex-1 bg-transparent outline-none font-semibold text-lg", style: { color: C.text } })),
+        React.createElement("div", { className: "p-4 space-y-4" },
+            React.createElement(Seg, { options: ["Eval", "Funded", "Elite"], value: acc.mode, onChange: (v) => mut((x) => (x.mode = v)) }),
+            React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+                React.createElement("div", { className: "flex items-center justify-between mb-3" },
+                    React.createElement("span", { className: "text-xs", style: { color: C.dim } }, m.locked ? "DRAWDOWN — LOCKED" : "DRAWDOWN"),
+                    React.createElement(Pill, { label: acc.mode === "Eval" ? m.result.toUpperCase() : m.ddStatus, color: sc })),
+                React.createElement(Gauge, { room: m.cur.room, dd: m.r.dd, color: sc, line: m.cur.line, locked: m.locked }),
+                React.createElement("div", { className: "grid grid-cols-3 gap-3 mt-4" },
+                    React.createElement(Stat, { label: "Balance", value: fmt$(m.cur.eod) }),
+                    React.createElement(Stat, { label: "High-water", value: fmt$(m.cur.hwm) }),
+                    React.createElement(Stat, { label: "Total P&L", value: fmt$(m.totalPnL), color: m.totalPnL >= 0 ? C.green : C.red }))),
+            React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: V.c + "14", border: `1px solid ${V.c}` } },
+                React.createElement("div", { className: "flex items-center justify-between mb-2" },
+                    React.createElement("span", { className: "text-sm font-semibold", style: { color: C.text } }, "Today"),
+                    React.createElement(Pill, { label: V.l, color: V.c })),
+                React.createElement("p", { className: "text-lg font-bold", style: { color: V.c } }, V.r),
+                React.createElement("div", { className: "grid grid-cols-3 gap-3 mt-3" },
+                    React.createElement(Stat, { label: acc.mode === "Eval" ? "Aim today" : "Daily aim", value: fmt$(aim), color: C.teal }),
+                    React.createElement(Stat, { label: "Suggested size", value: showSize ? `${size}` : "—", color: showSize ? C.green : C.dim }),
+                    React.createElement(Stat, { label: "Today P&L", value: tP === null ? "—" : fmt$(tP), color: tP === null ? C.dim : tP >= 0 ? C.green : C.red })),
+                funded && (React.createElement("p", { className: "text-xs mt-2", style: { color: C.mut, fontFamily: MONO } }, funded.unlocked
+                    ? React.createElement(React.Fragment, null,
+                        "payouts ",
+                        React.createElement("span", { style: { color: C.green } }, "unlocked"),
+                        " \u00B7 up to ",
+                        React.createElement("span", { style: { color: C.gold } }, "$1,000"),
+                        "/day \u00B7 today ",
+                        React.createElement("span", { style: { color: C.gold } }, fmt$(funded.payoutAvail)))
+                    : React.createElement(React.Fragment, null,
+                        "buffer ",
+                        React.createElement("span", { style: { color: C.text } }, fmt$(m.totalPnL)),
+                        "/$2,100 \u00B7 build ",
+                        React.createElement("span", { style: { color: C.amber } }, fmt$(funded.unlockLeft)),
+                        " to unlock"))),
+                elite && (React.createElement("p", { className: "text-xs mt-2", style: { color: C.mut, fontFamily: MONO } },
+                    "building ",
+                    React.createElement("span", { style: { color: C.text } }, fmt$(m.totalPnL)),
+                    "/",
+                    fmt$(elite.eliteTarget),
+                    " \u00B7 pull-safe ",
+                    React.createElement("span", { style: { color: C.gold } }, fmt$(elite.safeWithdraw)),
+                    " \u00B7 keep 80%")),
+                React.createElement("div", { className: "mt-3 pt-3", style: { borderTop: `1px solid ${C.line}` } },
+                    React.createElement("div", { className: "flex items-center justify-between" },
+                        React.createElement("span", { className: "text-xs", style: { color: C.mut } }, "Log trades"),
+                        React.createElement("span", { className: "text-xs", style: { color: C.dim, fontFamily: MONO } },
+                            tradesCount,
+                            "/",
+                            maxTrades || "∞",
+                            " \u00B7 ",
+                            React.createElement("span", { style: { color: C.green } },
+                                wins,
+                                "W"),
+                            " ",
+                            React.createElement("span", { style: { color: C.red } },
+                                losses,
+                                "L"),
+                            lossStreak > 0 && React.createElement("span", { style: { color: C.red } },
+                                " \u00B7 ",
+                                lossStreak,
+                                " streak"))),
+                    React.createElement("div", { className: "flex gap-2 mt-2 items-end" },
+                        React.createElement(Field, { label: "Trade $", prefix: "$", value: amt, onChange: setAmt, placeholder: "result" }),
+                        React.createElement("button", { onClick: () => logTrade(1), className: "h-11 px-4 rounded-lg text-sm font-bold shrink-0", style: { backgroundColor: C.green, color: C.bg } }, "Win"),
+                        React.createElement("button", { onClick: () => logTrade(-1), className: "h-11 px-4 rounded-lg text-sm font-bold shrink-0", style: { backgroundColor: C.red, color: C.bg } }, "Loss")),
+                    tradesCount > 0 && (React.createElement(React.Fragment, null,
+                        React.createElement("div", { className: "flex flex-wrap items-center gap-1.5 mt-3" }, trades.map((t) => (React.createElement("span", { key: t.id, className: "rounded-md pl-2 pr-1 py-0.5 text-xs font-semibold inline-flex items-center gap-1", style: { fontFamily: MONO, color: t.amt >= 0 ? C.green : C.red, backgroundColor: (t.amt >= 0 ? C.green : C.red) + "22" } },
+                            t.amt >= 0 ? "W" : "L",
+                            " ",
+                            fmt$(t.amt),
+                            React.createElement("button", { onClick: () => delTrade(t.id), style: { color: C.dim } },
+                                React.createElement(X, { size: 12 })))))),
+                        React.createElement("button", { onClick: closeDay, className: "w-full h-10 rounded-lg mt-3 text-sm font-bold", style: { backgroundColor: C.teal, color: C.bg } },
+                            "Close out day \u2192 log ",
+                            fmt$(tP || 0)),
+                        React.createElement("p", { className: "text-xs mt-1.5 text-center", style: { color: C.dim } }, "commits the day to your ledger & moves the gauge")))),
+                React.createElement("div", { className: "mt-3 pt-3", style: { borderTop: `1px solid ${C.line}` } },
+                    React.createElement("span", { className: "text-xs", style: { color: C.mut } }, "Setup & limits"),
+                    React.createElement("div", { className: "mt-2" },
+                        React.createElement(Seg, { options: ["MES", "MNQ", "MGC", "MCL"], value: tr.inst, onChange: (v) => setTr("inst", v) })),
+                    React.createElement("div", { className: "flex gap-2 mt-2" },
+                        React.createElement(Field, { label: "Stop (pts)", value: tr.stop, onChange: (v) => setTr("stop", v) }),
+                        React.createElement(Field, { label: "Risk / trade", prefix: "$", value: tr.risk, onChange: (v) => setTr("risk", v) }),
+                        acc.mode === "Funded" && React.createElement(Field, { label: "Build days", prefix: "#", value: tr.buildDays, onChange: (v) => setTr("buildDays", v) })),
+                    acc.mode === "Elite" && (React.createElement("div", { className: "flex gap-2 mt-2" },
+                        React.createElement(Field, { label: "Payout target", prefix: "$", value: tr.eliteTarget, onChange: (v) => setTr("eliteTarget", v) }),
+                        React.createElement(Field, { label: "Build days", prefix: "#", value: tr.eliteDays, onChange: (v) => setTr("eliteDays", v) }))),
+                    React.createElement("div", { className: "flex gap-2 mt-2" },
+                        React.createElement(Field, { label: "Stop after losses", prefix: "#", value: tr.lossLimit, onChange: (v) => setTr("lossLimit", v) }),
+                        React.createElement(Field, { label: "Max trades", prefix: "#", value: tr.maxTrades, onChange: (v) => setTr("maxTrades", v) }),
+                        React.createElement(Field, { label: "Stop if down", prefix: "$", value: tr.dayStop, onChange: (v) => setTr("dayStop", v) })),
+                    showSize && (React.createElement("p", { className: "text-xs mt-2", style: { color: C.dim } },
+                        size,
+                        " ",
+                        tr.inst,
+                        " \u00B7 risks ",
+                        fmt$(size * riskPer),
+                        " (",
+                        m.cur.room > 0 ? pct((size * riskPer) / m.cur.room) : "—",
+                        " of room) per trade")))),
+            acc.mode === "Eval" && (React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: m.result === "PASSED" ? C.green + "1A" : C.panel, border: `1px solid ${m.result === "PASSED" ? C.green : C.line}` } },
+                React.createElement("div", { className: "flex items-center justify-between" },
+                    React.createElement("span", { className: "font-bold", style: { color: m.result === "PASSED" ? C.green : C.text } }, m.result === "PASSED" ? "PASSED ✓" : m.result),
+                    React.createElement("span", { className: "text-sm", style: { color: C.mut, fontFamily: MONO } },
+                        m.days,
+                        "/",
+                        m.r.minDays,
+                        " days")),
+                m.result !== "PASSED" && (React.createElement("p", { className: "text-sm mt-1", style: { color: C.mut, fontFamily: MONO } },
+                    fmt$(m.profitToPass),
+                    " more profit to pass")),
+                m.result === "PASSED" && (!confirmAct ? (React.createElement(React.Fragment, null,
+                    React.createElement("button", { onClick: () => setConfirmAct(true), className: "w-full h-11 rounded-lg mt-3 text-sm font-bold", style: { backgroundColor: C.green, color: C.bg } }, "Activate funded account \u2192"),
+                    React.createElement("p", { className: "text-xs mt-1.5 text-center", style: { color: C.dim } }, "eval profit doesn't carry \u2014 funded starts fresh at $50,000"))) : (React.createElement("div", { className: "mt-3" },
+                    React.createElement("p", { className: "text-sm", style: { color: C.text } }, "Start a fresh funded account at $50,000? This clears the eval days (your cost & ROI stay)."),
+                    React.createElement("div", { className: "flex gap-2 mt-2" },
+                        React.createElement("button", { onClick: activateFunded, className: "flex-1 h-11 rounded-lg text-sm font-bold", style: { backgroundColor: C.green, color: C.bg } }, "Yes, start funded"),
+                        React.createElement("button", { onClick: () => setConfirmAct(false), className: "flex-1 h-11 rounded-lg text-sm font-semibold", style: { color: C.mut, border: `1px solid ${C.line}` } }, "Cancel"))))))),
+            acc.mode === "Eval" && (React.createElement("div", { className: "rounded-2xl p-4 space-y-3", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+                React.createElement("div", { className: "flex items-center justify-between" },
+                    React.createElement("span", { className: "text-sm font-semibold", style: { color: C.text } }, "Consistency \u00B7 40% rule"),
+                    React.createElement("span", { className: "text-sm font-bold", style: { color: m.consistOK ? C.green : C.red, fontFamily: MONO } },
+                        pct(m.bigPct),
+                        " of total")),
+                React.createElement("div", { className: "h-2 w-full rounded-full overflow-hidden", style: { backgroundColor: "#0A0D12" } },
+                    React.createElement("div", { className: "h-full", style: { width: `${clamp(m.bigPct / 0.4, 0, 1) * 100}%`, backgroundColor: m.consistOK ? C.green : C.red } })),
+                React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+                    React.createElement(Stat, { label: "Biggest day", value: fmt$(m.biggest) }),
+                    React.createElement(Stat, { label: "More profit needed", value: fmt$(m.moreNeeded), color: m.moreNeeded > 0 ? C.amber : C.green }),
+                    React.createElement(Stat, { label: "Max day @ target", value: fmt$(m.maxDayTarget) }),
+                    React.createElement(Stat, { label: "Suggested daily cap", value: fmt$(m.suggCap), color: C.teal })),
+                React.createElement("div", { className: "pt-1" },
+                    React.createElement(Field, { label: "What-if: plan a win day of", prefix: "$", value: whatif, onChange: setWhatif, placeholder: "1000" }),
+                    wf > 0 && (React.createElement("p", { className: "text-sm mt-2", style: { color: C.mut, fontFamily: MONO } },
+                        "needs ",
+                        fmt$(wfTotal),
+                        " total \u00B7",
+                        " ",
+                        React.createElement("span", { style: { color: wfSafe ? C.green : C.red } }, wfSafe ? "safe at target" : "too big for target")))))),
+            React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+                React.createElement("span", { className: "text-sm font-semibold", style: { color: C.text } }, "Log a day"),
+                React.createElement("div", { className: "flex gap-2 mt-3 items-end" },
+                    React.createElement(Field, { label: "Date", type: "date", value: d, onChange: setD }),
+                    React.createElement(Field, { label: "Net P&L", prefix: "$", value: net, onChange: setNet, placeholder: "0" }),
+                    React.createElement("button", { onClick: addDay, className: "h-11 w-11 rounded-lg flex items-center justify-center shrink-0", style: { backgroundColor: C.teal, color: C.bg } },
+                        React.createElement(Plus, { size: 22 }))),
+                React.createElement("div", { className: "mt-3 divide-y", style: { borderColor: C.line } },
+                    [...m.rows].reverse().map((row) => (React.createElement("div", { key: row.id, className: "flex items-center justify-between py-2" },
+                        React.createElement("span", { className: "text-sm", style: { color: C.mut, fontFamily: MONO } }, row.date),
+                        React.createElement("div", { className: "flex items-center gap-3" },
+                            React.createElement("span", { className: "text-sm font-semibold", style: { color: row.net >= 0 ? C.green : C.red, fontFamily: MONO } }, fmt$(row.net)),
+                            React.createElement("span", { className: "text-sm", style: { color: C.dim, fontFamily: MONO } }, fmt$(row.eod)),
+                            React.createElement("button", { onClick: () => delDay(row.id), style: { color: C.dim } },
+                                React.createElement(X, { size: 16 })))))),
+                    m.rows.length === 0 && React.createElement("p", { className: "text-sm py-3", style: { color: C.dim } }, "No days yet \u2014 add tonight's result."))),
+            acc.mode !== "Eval" && (React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+                React.createElement("div", { className: "flex items-center justify-between" },
+                    React.createElement("span", { className: "text-sm font-semibold", style: { color: C.text } }, "Payouts"),
+                    React.createElement("span", { className: "text-sm", style: { color: C.mut, fontFamily: MONO } },
+                        m.payCount,
+                        " \u00B7 ",
+                        fmt$(m.paySum))),
+                acc.mode === "Funded" && m.payCount > 0 && (React.createElement("p", { className: "text-xs mt-1 flex items-center gap-1", style: { color: C.gold } },
+                    React.createElement(Lock, { size: 11 }),
+                    " floor locked at ",
+                    fmt$(m.r.floor),
+                    " (first payout taken)")),
+                React.createElement("div", { className: "flex gap-2 mt-3 items-end" },
+                    React.createElement(Field, { label: "Date", type: "date", value: pod, onChange: setPod }),
+                    React.createElement(Field, { label: "Amount", prefix: "$", value: po, onChange: setPo, placeholder: "0" }),
+                    React.createElement("button", { onClick: addPay, className: "h-11 w-11 rounded-lg flex items-center justify-center shrink-0", style: { backgroundColor: C.gold, color: C.bg } },
+                        React.createElement(Plus, { size: 22 }))),
+                React.createElement("div", { className: "mt-2 divide-y", style: { borderColor: C.line } }, [...acc.payouts].reverse().map((p) => (React.createElement("div", { key: p.id, className: "flex items-center justify-between py-2" },
+                    React.createElement("span", { className: "text-sm", style: { color: C.mut, fontFamily: MONO } }, p.date),
+                    React.createElement("div", { className: "flex items-center gap-3" },
+                        React.createElement("span", { className: "text-sm font-semibold", style: { color: C.gold, fontFamily: MONO } }, fmt$(p.amount)),
+                        React.createElement("button", { onClick: () => delPay(p.id), style: { color: C.dim } },
+                            React.createElement(X, { size: 16 }))))))))),
+            acc.mode === "Funded" && (React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } }, !confirmElite ? (React.createElement(React.Fragment, null,
+                React.createElement("button", { onClick: () => setConfirmElite(true), className: "w-full h-11 rounded-lg text-sm font-bold", style: { backgroundColor: C.gold, color: C.bg } }, "Move to Elite Live \u2192"),
+                React.createElement("p", { className: "text-xs mt-1.5 text-center", style: { color: C.dim } }, "when Tradeify selects you \u00B7 needs \u22651 payout \u00B7 Elite starts fresh at $0"))) : (React.createElement("div", null,
+                React.createElement("p", { className: "text-sm", style: { color: C.text } }, "Move this account to Elite Live? It resets to a $0 baseline with $2,000 drawdown. Your payouts & cost stay for ROI."),
+                React.createElement("div", { className: "flex gap-2 mt-2" },
+                    React.createElement("button", { onClick: moveToElite, className: "flex-1 h-11 rounded-lg text-sm font-bold", style: { backgroundColor: C.gold, color: C.bg } }, "Yes, go Elite"),
+                    React.createElement("button", { onClick: () => setConfirmElite(false), className: "flex-1 h-11 rounded-lg text-sm font-semibold", style: { color: C.mut, border: `1px solid ${C.line}` } }, "Cancel")))))),
+            React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+                React.createElement("span", { className: "text-sm font-semibold", style: { color: C.text } }, "Cost & ROI"),
+                React.createElement("div", { className: "flex gap-2 mt-3" },
+                    React.createElement(Field, { label: "Eval cost", prefix: "$", value: acc.econ.evalCost, onChange: (v) => mut((x) => (x.econ.evalCost = parseFloat(v) || 0)) }),
+                    React.createElement(Field, { label: "Resets", prefix: "#", value: acc.econ.resetCount, onChange: (v) => mut((x) => (x.econ.resetCount = parseFloat(v) || 0)) }),
+                    React.createElement(Field, { label: "Reset fee", prefix: "$", value: acc.econ.resetFee, onChange: (v) => mut((x) => (x.econ.resetFee = parseFloat(v) || 0)) })),
+                React.createElement("div", { className: "grid grid-cols-3 gap-3 mt-4" },
+                    React.createElement(Stat, { label: "Invested", value: fmt$(m.invested) }),
+                    React.createElement(Stat, { label: "Net", value: fmt$(m.net), color: m.net >= 0 ? C.green : C.red }),
+                    React.createElement(Stat, { label: "ROI", value: pct(m.roi), color: m.roi >= 0 ? C.green : C.red }))))));
 }
-
-
 function Tracker({ accounts, rules }) {
-  const ms = accounts.map((a) => compute(a, rules));
-  const sum = (f) => ms.reduce((s, m) => s + f(m), 0);
-  const invested = sum((m) => m.invested), paySum = sum((m) => m.paySum);
-  const open = sum((m) => m.totalPnL), net = paySum - invested;
-  const resets = accounts.reduce((s, a) => s + a.econ.resetCount, 0);
-  const roi = invested > 0 ? net / invested : 0;
-  const allIn = invested > 0 ? (paySum + open - invested) / invested : 0;
-
-  const Box = ({ label, value, color }) => (
-    <div className="rounded-xl p-3" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-      <div className="text-xs" style={{ color: C.dim }}>{label}</div>
-      <div className="text-lg font-bold" style={{ color: color || C.text, fontFamily: MONO }}>{value}</div>
-    </div>
-  );
-  return (
-    <div className="p-4 pb-28 space-y-4">
-      <h2 className="text-lg font-bold" style={{ color: C.text }}>Portfolio · ROI</h2>
-      <div className="grid grid-cols-2 gap-3">
-        <Box label="Total invested" value={fmt$(invested)} />
-        <Box label="Total payouts" value={fmt$(paySum)} color={C.gold} />
-        <Box label="Net (realized)" value={fmt$(net)} color={net >= 0 ? C.green : C.red} />
-        <Box label="Realized ROI" value={pct(roi)} color={roi >= 0 ? C.green : C.red} />
-        <Box label="Open P&L" value={fmt$(open)} color={open >= 0 ? C.green : C.red} />
-        <Box label="All-in return" value={pct(allIn)} color={allIn >= 0 ? C.green : C.red} />
-        <Box label="Total restarts" value={resets} />
-        <Box label="Purchases" value={accounts.length + resets} />
-      </div>
-      <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${C.line}` }}>
-        {accounts.map((a, i) => (
-          <div key={i} className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: C.panel, borderTop: i ? `1px solid ${C.line}` : "none" }}>
-            <span className="text-sm truncate" style={{ color: C.text }}>{a.name}</span>
-            <div className="flex items-center gap-4">
-              <span className="text-sm" style={{ color: C.gold, fontFamily: MONO }}>{fmt$(ms[i].paySum)}</span>
-              <span className="text-sm font-semibold w-16 text-right" style={{ color: ms[i].roi >= 0 ? C.green : C.red, fontFamily: MONO }}>{pct(ms[i].roi)}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    const ms = accounts.map((a) => compute(a, rules));
+    const sum = (f) => ms.reduce((s, m) => s + f(m), 0);
+    const invested = sum((m) => m.invested), paySum = sum((m) => m.paySum);
+    const open = sum((m) => m.totalPnL), net = paySum - invested;
+    const resets = accounts.reduce((s, a) => s + a.econ.resetCount, 0);
+    const roi = invested > 0 ? net / invested : 0;
+    const allIn = invested > 0 ? (paySum + open - invested) / invested : 0;
+    const Box = ({ label, value, color }) => (React.createElement("div", { className: "rounded-xl p-3", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+        React.createElement("div", { className: "text-xs", style: { color: C.dim } }, label),
+        React.createElement("div", { className: "text-lg font-bold", style: { color: color || C.text, fontFamily: MONO } }, value)));
+    return (React.createElement("div", { className: "p-4 pb-28 space-y-4" },
+        React.createElement("h2", { className: "text-lg font-bold", style: { color: C.text } }, "Portfolio \u00B7 ROI"),
+        React.createElement("div", { className: "grid grid-cols-2 gap-3" },
+            React.createElement(Box, { label: "Total invested", value: fmt$(invested) }),
+            React.createElement(Box, { label: "Total payouts", value: fmt$(paySum), color: C.gold }),
+            React.createElement(Box, { label: "Net (realized)", value: fmt$(net), color: net >= 0 ? C.green : C.red }),
+            React.createElement(Box, { label: "Realized ROI", value: pct(roi), color: roi >= 0 ? C.green : C.red }),
+            React.createElement(Box, { label: "Open P&L", value: fmt$(open), color: open >= 0 ? C.green : C.red }),
+            React.createElement(Box, { label: "All-in return", value: pct(allIn), color: allIn >= 0 ? C.green : C.red }),
+            React.createElement(Box, { label: "Total restarts", value: resets }),
+            React.createElement(Box, { label: "Purchases", value: accounts.length + resets })),
+        React.createElement("div", { className: "rounded-2xl overflow-hidden", style: { border: `1px solid ${C.line}` } }, accounts.map((a, i) => (React.createElement("div", { key: i, className: "flex items-center justify-between px-4 py-3", style: { backgroundColor: C.panel, borderTop: i ? `1px solid ${C.line}` : "none" } },
+            React.createElement("span", { className: "text-sm truncate", style: { color: C.text } }, a.name),
+            React.createElement("div", { className: "flex items-center gap-4" },
+                React.createElement("span", { className: "text-sm", style: { color: C.gold, fontFamily: MONO } }, fmt$(ms[i].paySum)),
+                React.createElement("span", { className: "text-sm font-semibold w-16 text-right", style: { color: ms[i].roi >= 0 ? C.green : C.red, fontFamily: MONO } }, pct(ms[i].roi)))))))));
 }
-
 function Rules({ rules, setRules, fullState, setFullState, storeOff }) {
-  const fields = [
-    ["target", "Profit target", "$"], ["dd", "Max drawdown", "$"],
-    ["consist", "Consistency", "%"], ["minDays", "Min days", "#"], ["maxContracts", "Max micros", "#"],
-  ];
-  const upd = (mode, key, val) => setRules((rs) => {
-    const r = JSON.parse(JSON.stringify(rs));
-    r[mode][key] = key === "consist" ? (parseFloat(val) || 0) / 100 : parseFloat(val) || 0;
-    return r;
-  });
-  const [imp, setImp] = useState("");
-  const [msg, setMsg] = useState("");
-  const exportText = JSON.stringify(fullState);
-  const copyExport = async () => {
-    try { await navigator.clipboard.writeText(exportText); setMsg("Backup copied — paste it somewhere safe (Notes)."); }
-    catch { setMsg("Couldn't auto-copy — select the text below and copy it."); }
-  };
-  const doImport = () => {
-    try { setFullState(migrate(JSON.parse(imp))); setImp(""); setMsg("Backup restored."); }
-    catch { setMsg("That doesn't look like a valid backup."); }
-  };
-  return (
-    <div className="p-4 pb-28 space-y-4">
-      <h2 className="text-lg font-bold" style={{ color: C.text }}>Rules · 50K Select</h2>
-      <p className="text-xs" style={{ color: C.mut }}>
-        Verified Tradeify defaults (Jun 2026). Keep target $3,000 unless you bought during the old $2,500 trial.
-      </p>
-      {["Eval", "Funded", "Elite"].map((mode) => (
-        <div key={mode} className="rounded-2xl p-4" style={{ backgroundColor: C.panel, border: `1px solid ${C.line}` }}>
-          <div className="font-semibold mb-3" style={{ color: C.teal }}>{mode}</div>
-          <div className="grid grid-cols-2 gap-3">
-            {fields.map(([key, label, pre]) => (
-              <Field key={key} label={label} prefix={pre}
-                value={key === "consist" ? Math.round(rules[mode][key] * 100) : rules[mode][key]}
-                onChange={(v) => upd(mode, key, v)} />
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {/* backup & restore */}
-      <div className="rounded-2xl p-4" style={{ backgroundColor: C.panel, border: `1px solid ${storeOff ? C.amber : C.line}` }}>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold" style={{ color: C.text }}>Backup &amp; restore</span>
-          <span className="text-xs" style={{ color: storeOff ? C.amber : C.green }}>{storeOff ? "auto-save off" : "auto-save on"}</span>
-        </div>
-        <p className="text-xs mt-1" style={{ color: C.mut }}>
-          {storeOff
-            ? "Auto-save isn't working in this view. Copy your backup and keep it — paste it back to restore if the app resets."
-            : "Auto-save is on. This is an extra safety copy of all your data."}
-        </p>
-        <button onClick={copyExport} className="w-full h-11 rounded-lg mt-3 text-sm font-bold" style={{ backgroundColor: C.teal, color: C.bg }}>Copy backup</button>
-        <textarea readOnly value={exportText} onFocus={(e) => e.target.select()}
-          className="w-full mt-2 rounded-lg p-2 text-xs h-16" style={{ backgroundColor: C.bg, border: `1px solid ${C.line}`, color: C.dim, fontFamily: MONO }} />
-        <p className="text-xs mt-3" style={{ color: C.mut }}>Restore: paste a backup and load it.</p>
-        <textarea value={imp} onChange={(e) => setImp(e.target.value)} placeholder="paste backup here"
-          className="w-full mt-1 rounded-lg p-2 text-xs h-16" style={{ backgroundColor: C.bg, border: `1px solid ${C.line}`, color: C.text, fontFamily: MONO }} />
-        <button onClick={doImport} className="w-full h-11 rounded-lg mt-2 text-sm font-semibold" style={{ color: C.text, border: `1px solid ${C.line}` }}>Load backup</button>
-        {msg && <p className="text-xs mt-2 text-center" style={{ color: C.teal }}>{msg}</p>}
-      </div>
-
-      <button onClick={() => setRules(JSON.parse(JSON.stringify(RULE_DEFAULTS)))}
-        className="w-full h-11 rounded-xl text-sm font-semibold" style={{ color: C.mut, border: `1px solid ${C.line}` }}>
-        Reset to Tradeify defaults
-      </button>
-    </div>
-  );
+    const fields = [
+        ["target", "Profit target", "$"], ["dd", "Max drawdown", "$"],
+        ["consist", "Consistency", "%"], ["minDays", "Min days", "#"], ["maxContracts", "Max micros", "#"],
+    ];
+    const upd = (mode, key, val) => setRules((rs) => {
+        const r = JSON.parse(JSON.stringify(rs));
+        r[mode][key] = key === "consist" ? (parseFloat(val) || 0) / 100 : parseFloat(val) || 0;
+        return r;
+    });
+    const [imp, setImp] = useState("");
+    const [msg, setMsg] = useState("");
+    const exportText = JSON.stringify(fullState);
+    const copyExport = async () => {
+        try {
+            await navigator.clipboard.writeText(exportText);
+            setMsg("Backup copied — paste it somewhere safe (Notes).");
+        }
+        catch {
+            setMsg("Couldn't auto-copy — select the text below and copy it.");
+        }
+    };
+    const doImport = () => {
+        try {
+            setFullState(migrate(JSON.parse(imp)));
+            setImp("");
+            setMsg("Backup restored.");
+        }
+        catch {
+            setMsg("That doesn't look like a valid backup.");
+        }
+    };
+    return (React.createElement("div", { className: "p-4 pb-28 space-y-4" },
+        React.createElement("h2", { className: "text-lg font-bold", style: { color: C.text } }, "Rules \u00B7 50K Select"),
+        React.createElement("p", { className: "text-xs", style: { color: C.mut } }, "Verified Tradeify defaults (Jun 2026). Keep target $3,000 unless you bought during the old $2,500 trial."),
+        ["Eval", "Funded", "Elite"].map((mode) => (React.createElement("div", { key: mode, className: "rounded-2xl p-4", style: { backgroundColor: C.panel, border: `1px solid ${C.line}` } },
+            React.createElement("div", { className: "font-semibold mb-3", style: { color: C.teal } }, mode),
+            React.createElement("div", { className: "grid grid-cols-2 gap-3" }, fields.map(([key, label, pre]) => (React.createElement(Field, { key: key, label: label, prefix: pre, value: key === "consist" ? Math.round(rules[mode][key] * 100) : rules[mode][key], onChange: (v) => upd(mode, key, v) }))))))),
+        React.createElement("div", { className: "rounded-2xl p-4", style: { backgroundColor: C.panel, border: `1px solid ${storeOff ? C.amber : C.line}` } },
+            React.createElement("div", { className: "flex items-center justify-between" },
+                React.createElement("span", { className: "text-sm font-semibold", style: { color: C.text } }, "Backup & restore"),
+                React.createElement("span", { className: "text-xs", style: { color: storeOff ? C.amber : C.green } }, storeOff ? "auto-save off" : "auto-save on")),
+            React.createElement("p", { className: "text-xs mt-1", style: { color: C.mut } }, storeOff
+                ? "Auto-save isn't working in this view. Copy your backup and keep it — paste it back to restore if the app resets."
+                : "Auto-save is on. This is an extra safety copy of all your data."),
+            React.createElement("button", { onClick: copyExport, className: "w-full h-11 rounded-lg mt-3 text-sm font-bold", style: { backgroundColor: C.teal, color: C.bg } }, "Copy backup"),
+            React.createElement("textarea", { readOnly: true, value: exportText, onFocus: (e) => e.target.select(), className: "w-full mt-2 rounded-lg p-2 text-xs h-16", style: { backgroundColor: C.bg, border: `1px solid ${C.line}`, color: C.dim, fontFamily: MONO } }),
+            React.createElement("p", { className: "text-xs mt-3", style: { color: C.mut } }, "Restore: paste a backup and load it."),
+            React.createElement("textarea", { value: imp, onChange: (e) => setImp(e.target.value), placeholder: "paste backup here", className: "w-full mt-1 rounded-lg p-2 text-xs h-16", style: { backgroundColor: C.bg, border: `1px solid ${C.line}`, color: C.text, fontFamily: MONO } }),
+            React.createElement("button", { onClick: doImport, className: "w-full h-11 rounded-lg mt-2 text-sm font-semibold", style: { color: C.text, border: `1px solid ${C.line}` } }, "Load backup"),
+            msg && React.createElement("p", { className: "text-xs mt-2 text-center", style: { color: C.teal } }, msg)),
+        React.createElement("button", { onClick: () => setRules(JSON.parse(JSON.stringify(RULE_DEFAULTS))), className: "w-full h-11 rounded-xl text-sm font-semibold", style: { color: C.mut, border: `1px solid ${C.line}` } }, "Reset to Tradeify defaults")));
 }
-
 // ---------- shell ----------
 function App() {
-  const [state, setState] = useState(null);
-  const [tab, setTab] = useState("home");
-  const [openIdx, setOpenIdx] = useState(null);
-  const [storeOff, setStoreOff] = useState(false);
-  const stateRef = useRef(null);
-  stateRef.current = state;
-
-  useEffect(() => {
-    (async () => {
-      try {
-        if (!window.storage) { setStoreOff(true); setState(JSON.parse(JSON.stringify(DEFAULT_STATE))); return; }
-        const res = await window.storage.get(KEY, false);
-        setState(migrate(res && res.value ? JSON.parse(res.value) : JSON.parse(JSON.stringify(DEFAULT_STATE))));
-      } catch {
-        if (!window.storage) setStoreOff(true);   // missing key on first run is normal; only real failure flags
-        setState(JSON.parse(JSON.stringify(DEFAULT_STATE)));
-      }
-    })();
-  }, []);
-
-  const save = useCallback(async (s) => {
-    if (!s) return;
-    try {
-      if (!window.storage) { setStoreOff(true); return; }
-      await window.storage.set(KEY, JSON.stringify(s), false);
-      setStoreOff(false);
-    } catch { setStoreOff(true); }
-  }, []);
-
-  useEffect(() => {
-    if (!state) return;
-    const t = setTimeout(() => save(state), 300);
-    return () => clearTimeout(t);
-  }, [state, save]);
-
-  useEffect(() => {
-    const onHide = () => { if (document.visibilityState === "hidden") save(stateRef.current); };
-    document.addEventListener("visibilitychange", onHide);
-    return () => document.removeEventListener("visibilitychange", onHide);
-  }, [save]);
-
-  const setRules = useCallback((fn) => setState((s) => ({ ...s, rules: typeof fn === "function" ? fn(s.rules) : fn })), []);
-
-  if (!state) return <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: C.bg, color: C.dim }}>Loading…</div>;
-
-  const tabs = [["home", Home, "Home"], ["roi", TrendingUp, "ROI"], ["rules", Sliders, "Rules"]];
-
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: C.bg, fontFamily: "system-ui, -apple-system, sans-serif" }}>
-      {openIdx === null && (
-        <header className="px-4 pt-5 pb-3 flex items-baseline justify-between">
-          <h1 className="text-2xl font-bold tracking-tight" style={{ color: C.text }}>
-            DRAW<span style={{ color: C.teal }}>LINE</span>
-          </h1>
-          <span className="text-xs" style={{ color: storeOff ? C.amber : C.dim }}>
-            {storeOff ? "not auto-saving · back up in Rules" : "saved to you · private"}
-          </span>
-        </header>
-      )}
-
-      {openIdx !== null
-        ? <AccountDetail idx={openIdx} state={state} setState={setState} back={() => setOpenIdx(null)} />
-        : tab === "home" ? <Dashboard accounts={state.accounts} rules={state.rules} open={setOpenIdx} />
-        : tab === "roi" ? <Tracker accounts={state.accounts} rules={state.rules} />
-        : <Rules rules={state.rules} setRules={setRules} fullState={state} setFullState={setState} storeOff={storeOff} />}
-
-      {openIdx === null && (
-        <nav className="fixed bottom-0 left-0 right-0 flex justify-around items-center h-16 px-2"
-          style={{ backgroundColor: C.panel2, borderTop: `1px solid ${C.line}`, paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {tabs.map(([id, Icon, label]) => (
-            <button key={id} onClick={() => setTab(id)} className="flex flex-col items-center gap-1 flex-1 py-1"
-              style={{ color: tab === id ? C.teal : C.dim }}>
-              <Icon size={22} />
-              <span className="text-xs font-medium">{label}</span>
-            </button>
-          ))}
-        </nav>
-      )}
-    </div>
-  );
+    const [state, setState] = useState(null);
+    const [tab, setTab] = useState("home");
+    const [openIdx, setOpenIdx] = useState(null);
+    const [storeOff, setStoreOff] = useState(false);
+    const stateRef = useRef(null);
+    stateRef.current = state;
+    useEffect(() => {
+        (async () => {
+            try {
+                if (!window.storage) {
+                    setStoreOff(true);
+                    setState(JSON.parse(JSON.stringify(DEFAULT_STATE)));
+                    return;
+                }
+                const res = await window.storage.get(KEY, false);
+                setState(migrate(res && res.value ? JSON.parse(res.value) : JSON.parse(JSON.stringify(DEFAULT_STATE))));
+            }
+            catch {
+                if (!window.storage)
+                    setStoreOff(true); // missing key on first run is normal; only real failure flags
+                setState(JSON.parse(JSON.stringify(DEFAULT_STATE)));
+            }
+        })();
+    }, []);
+    const save = useCallback(async (s) => {
+        if (!s)
+            return;
+        try {
+            if (!window.storage) {
+                setStoreOff(true);
+                return;
+            }
+            await window.storage.set(KEY, JSON.stringify(s), false);
+            setStoreOff(false);
+        }
+        catch {
+            setStoreOff(true);
+        }
+    }, []);
+    useEffect(() => {
+        if (!state)
+            return;
+        const t = setTimeout(() => save(state), 300);
+        return () => clearTimeout(t);
+    }, [state, save]);
+    useEffect(() => {
+        const onHide = () => { if (document.visibilityState === "hidden")
+            save(stateRef.current); };
+        document.addEventListener("visibilitychange", onHide);
+        return () => document.removeEventListener("visibilitychange", onHide);
+    }, [save]);
+    const setRules = useCallback((fn) => setState((s) => ({ ...s, rules: typeof fn === "function" ? fn(s.rules) : fn })), []);
+    if (!state)
+        return React.createElement("div", { className: "min-h-screen flex items-center justify-center", style: { backgroundColor: C.bg, color: C.dim } }, "Loading\u2026");
+    const tabs = [["home", Home, "Home"], ["roi", TrendingUp, "ROI"], ["rules", Sliders, "Rules"]];
+    return (React.createElement("div", { className: "min-h-screen", style: { backgroundColor: C.bg, fontFamily: "system-ui, -apple-system, sans-serif" } },
+        openIdx === null && (React.createElement("header", { className: "px-4 pt-5 pb-3 flex items-baseline justify-between" },
+            React.createElement("h1", { className: "text-2xl font-bold tracking-tight", style: { color: C.text } },
+                "DRAW",
+                React.createElement("span", { style: { color: C.teal } }, "LINE")),
+            React.createElement("span", { className: "text-xs", style: { color: storeOff ? C.amber : C.dim } }, storeOff ? "not auto-saving · back up in Rules" : "saved to you · private"))),
+        openIdx !== null
+            ? React.createElement(AccountDetail, { idx: openIdx, state: state, setState: setState, back: () => setOpenIdx(null) })
+            : tab === "home" ? React.createElement(Dashboard, { accounts: state.accounts, rules: state.rules, open: setOpenIdx })
+                : tab === "roi" ? React.createElement(Tracker, { accounts: state.accounts, rules: state.rules })
+                    : React.createElement(Rules, { rules: state.rules, setRules: setRules, fullState: state, setFullState: setState, storeOff: storeOff }),
+        openIdx === null && (React.createElement("nav", { className: "fixed bottom-0 left-0 right-0 flex justify-around items-center h-16 px-2", style: { backgroundColor: C.panel2, borderTop: `1px solid ${C.line}`, paddingBottom: "env(safe-area-inset-bottom)" } }, tabs.map(([id, Icon, label]) => (React.createElement("button", { key: id, onClick: () => setTab(id), className: "flex flex-col items-center gap-1 flex-1 py-1", style: { color: tab === id ? C.teal : C.dim } },
+            React.createElement(Icon, { size: 22 }),
+            React.createElement("span", { className: "text-xs font-medium" }, label))))))));
 }
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
 
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
+  }
+}catch(err){ showErr(err&&err.stack?((err.name||'Error')+': '+(err.message||'')+'\n'+err.stack):err); }
 </script>
 </body>
 </html>
